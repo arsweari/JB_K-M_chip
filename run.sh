@@ -21,8 +21,8 @@ nextflow run nf-core/chipseq -r 1.1.0 \
 --fasta /scratch/Users/alsw5948/JB_K-M/JB_K-M_chip/util/NCBIM37.genome.fa \
 --gtf /scratch/Users/alsw5948/JB_K-M/JB_K-M_chip/util/gencode.vM1.annotation.gtf \
 --macs_gsize 1.87e9 \
---blacklist hg38-blacklist.v2.bed \
---email john.rinn@colorado.edu \
+--blacklist mm9-blacklist.bed \
+--email alison.swearingen@colorado.edu \
 -resume \
 -c nextflow.config
 
