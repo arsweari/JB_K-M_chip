@@ -1,0 +1,13 @@
+https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSM3580640&format=file&file=GSM3580640%5F01%2EWT%2Drep1%2DH3K9me3%5Fpeak%2EbedGraph%2Egz
+https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSM3580641&format=file&file=GSM3580641%5F02%2EWT%2Drep1%2DH3K27me3%5Fpeak%2EbedGraph%2Egz
+https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSM3580642&format=file&file=GSM3580642%5F03%2EWT%2Drep1%2DH3K36me3%5Fpeak%2EbedGraph%2Egz
+https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSM3580644&format=file&file=GSM3580644%5F01%2EWT%2Drep2%2DH3K9me3%5Fpeak%2EbedGraph%2Egz
+https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSM3580645&format=file&file=GSM3580645%5F02%2EWT%2Drep2%2DH3K27me3%5Fpeak%2EbedGraph%2Egz
+https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSM3580646&format=file&file=GSM3580646%5F03%2EWT%2Drep2%2DH3K36me3%5Fpeak%2EbedGraph%2Egz
+https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSM3580648&format=file&file=GSM3580648%5F04%2EK9M%2Drep1%2DH3K9me3%5Fpeak%2EbedGraph%2Egz
+https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSM3580650&format=file&file=GSM3580650%5F04%2EK9M%2Drep2%2DH3K9me3%5Fpeak%2EbedGraph%2Egz
+https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSM3580652&format=file&file=GSM3580652%5F05%2EK36M%2Drep1%2DH3K27me3%5Fpeak%2EbedGraph%2Egz
+https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSM3580653&format=file&file=GSM3580653%5F06%2EK36M%2Drep1%2DH3K36me3%5Fpeak%2EbedGraph%2Egz
+https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSM3580655&format=file&file=GSM3580655%5F06%2EK36M%2Drep2%2DH3K27me3%5Fpeak%2EbedGraph%2Egz
+https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSM3580656&format=file&file=GSM3580656%5F07%2EK36M%2Drep2%2DH3K36me3%5Fpeak%2EbedGraph%2Egz
+
