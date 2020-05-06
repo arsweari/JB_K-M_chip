@@ -23,6 +23,7 @@ nextflow run nf-core/chipseq -r 1.1.0 \
 --macs_gsize 1.87e9 \
 --blacklist mm9-blacklist.bed \
 --email alison.swearingen@colorado.edu \
+--email_on_fail alison.swearingen@colorado.edu
 -resume \
 -c nextflow.config
 
