@@ -1,0 +1,153 @@
+---
+title: "Consensus Peak Set"
+author: "Alison S"
+date: "5/7/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(stringsAsFactors = FALSE)
+library(GenomicRanges)
+library(rtracklayer)
+library(tidyverse)
+#source("../util/_setup.R")
+#source("../util/intersect_functions.R")
+```
+
+
+# Purpose: Create consensus peak sets
+
+To be conservative in our peak calls and be sure that we're dealing with replicatable peaks in the following analyses, here will will create a consensus peak .bed file for each DNA binding protein by taking only those peaks which overlap in all replicate experiments. 
+
+The resulting peaks will consist of peaks which overlapped by at least one base pair in each replicate and will use the `GenomicRanges::reduce` function to merge the peaks by taking the outer boundaries of overlapping peaks. This strategy may widen some peaks, but will ensure that each peak in the resulting peak set has evidence in all experiments performed for that DNA binding protein. 
+
+
+```{r}
+#functions needed to create consensus peaks
+
+read_peaks <- function(broad_peak_file) {
+  # A broad peak file is just a tab separated file 
+  dat <- read.table(broad_peak_file, sep = "\t")
+  gr <- GRanges(seqnames = dat$V1,
+                ranges = IRanges(start=dat$V2,end=dat$V3))
+  return(gr)
+}
+
+intersect_peaks <- function(peak_list) {
+  combined_peaks <- peak_list[[1]]
+  for(i in 2:length(peak_list)) {
+    suppressWarnings(pl_ov <- findOverlaps(combined_peaks, peak_list[[i]]))
+    pl1 <- combined_peaks[unique(pl_ov@from)]
+    pl2 <- peak_list[[i]][unique(pl_ov@to)]
+    suppressWarnings(combined_peaks <- GenomicRanges::reduce(union(pl1, pl2)))
+  }
+  return(combined_peaks)
+}
+
+```
+
+
+```{r}
+#Here we make the consensus peaks:
+
+broadpeakfilepath <- "/scratch/Users/alsw5948/JB_K-M/JB_K-M_chip/results/bwa/mergedLibrary/macs/broadPeak"
+
+fl <- list.files(broadpeakfilepath, 
+                   full.names=TRUE)
+fl <- fl[grep("peaks.broadPeak", fl)]
+  
+sample_name <- sapply(fl, function(x){
+    y <-  unlist(strsplit(x, "/"))[[12]]
+    z <- unlist(strsplit(y, "_"))[[1]]
+    w <- unlist(strsplit(y, "_"))[[2]]
+    #q <- unlist(strsplit(y, "_"))[[3]]
+    paste0(z, "_", w)
+  })
+  
+unique_sample <- unique(sample_name)
+  
+consensus_peaks <- list()
+  # This for loop will iterate over all dna binding proteins.
+for(i in 1:length(unique_sample)) {
+    # load all the peak files corresponding to this dna binding proteins.
+    sample <- unique_sample[i]
+    sample_index <- grep(sample, sample_name)
+    sample_files <- fl[sample_index]
+    
+    peak_list <- c()
+    for(j in 1:length(sample_files)) {
+      # See the read peaks function to know what subfunctions are called.
+      peak_list <- c(peak_list, read_peaks(sample_files[j]))
+    }
+    
+    canonical_chr <- c(paste0("chr", 1:22), "chrM", "chrX", "chrY")
+    for(i in 1:length(peak_list)) {
+      peak_list[[i]] <-peak_list[[i]][which(seqnames(peak_list[[i]]) %in% canonical_chr)]
+    }
+    
+    final_peakset <- intersect_peaks(peak_list = peak_list)
+    if(length(final_peakset) > 0) {
+      final_peakset$name <- paste0(sample, "_", 1:length(final_peakset))
+    }
+    
+    consensus_peaks <- c(consensus_peaks, list(final_peakset))
+    names(consensus_peaks)[length(consensus_peaks)] <- sample
+  }
+  return(consensus_peaks)
+
+```
+
+
+```{r export-peak-lists}
+# Export the peak lists as a bed file.
+for(i in 1:length(consensus_peaks)) {
+  rtracklayer::export(consensus_peaks[[i]], paste0("/scratch/Users/alsw5948/JB_K-M/JB_K-M_chip/results/consensus_peaks/",
+                                                   names(consensus_peaks)[i], 
+                                                   "_consensus_peaks.bed"))
+}
+```
+
+Look at some characteristics of the consensus peak lists:
+
+```{r total-peak-length}
+#table of number of consensus peaks per sample
+num_peaks_df <- data.frame("sample" = names(consensus_peaks),
+                           "num_peaks" = sapply(consensus_peaks, length))
+
+# Calculate the total peak width (bp bound by all peaks)
+num_peaks_df$total_peak_length <- sapply(consensus_peaks, function(peaks) sum(width(peaks)))
+write_csv(num_peaks_df, "/scratch/Users/alsw5948/JB_K-M/JB_K-M_chip/results/consensus_peaks/number_of_peaks_per_dbp.csv")
+
+g <- ggplot(num_peaks_df, aes(x = num_peaks, y = total_peak_length, label = sample))
+g + geom_point() + 
+  geom_smooth(method = "lm", se = FALSE, color = "black", lty = 2) +
+  geom_text(color = "red") +
+  ylab("BP covered") +
+  xlab("Number of peaks") +
+  ggtitle("Peak count vs. total bases covered")
+ggsave("/scratch/Users/alsw5948/JB_K-M/JB_K-M_chip/analysis/figures/peak_count_vs_peak_length.pdf", width = 12, height = 5)
+```
+
+Peak width distributions
+
+```{r peak-width-distribution}
+# Make a table with peak widths for all peak sets
+peak_widths_df <- lapply(consensus_peaks, 
+                      function(peaks) paste(width(peaks), collapse = ";")) %>%
+  as.data.frame() %>%
+  pivot_longer(cols = everything(),
+               names_to = "dbp",
+               values_to = "peak_width") %>%
+  separate_rows("peak_width", sep = ";", convert = T)
+
+peak_widths_summary <- peak_widths_df %>% 
+  group_by(dbp) %>%
+  summarize("mean_width" = mean(peak_width),
+            "median_width" = median(peak_width),
+            "sd_width" = sd(peak_width),
+            "cv_width" = (sd_width/mean_width)*100)
+```
+
