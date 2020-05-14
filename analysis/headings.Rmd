@@ -1,0 +1,56 @@
+---
+title: "Changing headings of broadPeaks, gappedPeaks"
+author: "Alison S"
+date: "5/11/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+options(stringsAsFactors = FALSE)
+library(tidyverse)
+library(rtracklayer)
+```
+
+For gappedPeak and broadPeak:
+
+```{r}
+# First let's get a list of all the peak files.
+# gappedPeak and broadPeak
+fl <- list.files("/scratch/Users/alsw5948/JB_K-M/JB_K-M_chip/results/bwa/mergedLibrary/macs/broadPeak/", full.names = TRUE)
+fl <- fl[c(grep("\\.broadPeak",fl),grep(".gappedPeak",fl))]
+
+nfl <- gsub("broadPeak/", "ucsc_peaks", fl)
+
+
+sample_name <- sapply(fl, function(x) {
+  unlist(strsplit(unlist(strsplit(x, "_peaks"))[[1]], "k//"))[[2]]
+})
+
+
+for(i in 1:length(fl)) {
+  if(i %% 10 == 0) {
+    print(i)
+  }
+  peaks <- read.table(fl[i])
+  peaks <- peaks[grep("chr",peaks$V1),]
+  
+  peak_type <- "broadPeak"
+  if(grepl("gappedPeak", fl[i])) {
+    peak_type <- "gappedPeak"
+  }
+  
+  
+  header_line <- paste0("track type=", peak_type,
+                        " visibility=3 db=mm9 name=\"",
+                        sample_name[i],
+                        "\"")
+  writeLines(header_line, nfl[i])
+  write.table(peaks, nfl[i], sep = "\t",
+              col.names = FALSE, row.names = FALSE, 
+              quote = FALSE, append = TRUE)
+  
+}
+```
+

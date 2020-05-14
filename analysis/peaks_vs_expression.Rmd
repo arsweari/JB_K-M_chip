@@ -1,0 +1,150 @@
+---
+title: "Untitled"
+author: "Alison S"
+date: "5/13/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(GenomicRanges)
+library(rtracklayer)
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+```
+
+```{r}
+#read in consensus peaks
+consensus_file_path <-  "/scratch/Users/alsw5948/JB_K-M/JB_K-M_chip/results/consensus_peaks"
+peak_files <- list.files(consensus_file_path, full.names = T)
+file_names <- str_extract(peak_files, "[\\w-]+\\.bed")
+sample_name <- sapply(file_names, function(x){
+    y <- unlist(strsplit(x, "_"))[[1]]
+    z <- unlist(strsplit(x, "_"))[[2]]
+    paste0(y, "_", z)
+  })
+
+#make a list of peaks for all samples
+peak_list <- c()
+for(i in 1:length(peak_files)) {
+    # Import peaks
+    peaks <- rtracklayer::import(peak_files[i])
+    # Append this GRanges object to the of the list.
+    peak_list <- c(peak_list, peaks)
+    # Name the list elements by their TF name.
+    names(peak_list)[length(peak_list)] <- sample_name[i]
+  }
+
+```
+
+```{r}
+histone_files <- data.frame("file" = list.files(consensus_file_path, full.names = T),
+                            "sample" = sample_name)
+# create a matrix indicating whether each chromatin mark overlaps each promoter
+hmark_occurence <- matrix(0, nrow = length(all_tpm$gene_id), ncol = nrow(histone_files))
+rownames(hmark_occurence) <- all_tpm$gene_id
+colnames(hmark_occurence) <- histone_files$sample
+# Fill in the matrix with overlaps
+# First column 1
+ov1 <- findOverlaps(reservoir_promoters, hmark_granges[[1]])
+res_overlaps <- unique(ov1@from)
+hmark_occurence[res_overlaps,1] <- 1
+table(hmark_occurence[,1])
+```
+
+```{r}
+#Let's find the overlapping peaks in WT and mutant histones - where did peaks stay the same?
+#overlaps between WT H3K36me3 and K36M H3K36me3
+overlaps_list <- c()
+K36_ovl <- findOverlaps(peak_list[[2]], peak_list[[5]])
+K36_overlapping_peaks <- peak_list[[2]][unique(K36_ovl@from)]
+overlaps_list <- c(overlaps_list, K36_overlapping_peaks)
+names(overlaps_list)[length(overlaps_list)] <- names(peak_list)[2]
+
+#same for K27me3 in K36M
+K27_ovl <- findOverlaps(peak_list[[1]], peak_list[[4]])
+K27_overlapping_peaks <- peak_list[[1]][unique(K27_ovl@from)]
+overlaps_list <- c(overlaps_list, K27_overlapping_peaks)
+names(overlaps_list)[length(overlaps_list)] <- names(peak_list)[1]
+
+#not going to do K9me3 because I think I need to re-call peaks wider in K9M and WT
+
+#get annotated genes from gtf
+genes <- gtf[gtf$type == "gene"]
+#count overlaps between K36me3 overlapping peaks and genes
+ovl_peak_count <- matrix(numeric(), ncol = length(genes), nrow = 0)
+ovl_count <- countOverlaps(genes, K36_overlapping_peaks)
+peak_count <- rbind(ovl_peak_count, ovl_count)
+rownames(peak_count)[nrow(peak_count)] <- names(overlaps_list)[1]
+colnames(peak_count) <- genes$gene_id
+
+
+#what I want is a data frame that has column for overlapping peaks, column for tpm at that peak
+gene_K36_peak_occurence <- matrix(as.numeric(peak_count > 0),
+                           nrow = dim(peak_count)[1],
+                           ncol = dim(peak_count)[2])
+rownames(gene_K36_peak_occurence) <- rownames(peak_count)
+colnames(gene_K36_peak_occurence) <- colnames(peak_count)
+
+
+gene_id <- gtf$gene_id
+transcript_type <- gtf$transcript_type
+#Make a data frame with gene IDs and transcript types.
+gene_type_df <- data.frame('gene_id' = gene_id, 'transcript_type' = transcript_type)
+gene_type_df <- gene_type_df[which(gene_type_df$transcript_type == "protein_coding"),]
+# Make a data frame of binding events per promoter.
+gene_K36_peak_occurence_df <- data.frame("gene_id" = colnames(gene_K36_peak_occurence),
+                                "number_of_overlaps" = colSums(gene_K36_peak_occurence))
+# Merge in the expression data into the data frame you just created.
+gene_K36_peak_occurence_df <- merge(gene_K36_peak_occurence_df, gene_type_df)
+gene_K36_peak_occurence_df <- merge(gene_K36_peak_occurence_df, K36M_tpm)
+
+#filter out no overlaps between K36me3 peaks in WT and K36M with genes
+num_ovl <- 0
+K36_no_gene_ovl <- filter(gene_K36_peak_occurence_df, gene_K36_peak_occurence_df$number_of_overlaps > num_ovl)
+
+
+#plot
+g <- ggplot(K36_no_gene_ovl, aes(x = K36M_tpm))
+g + geom_density(alpha = 0.2, color = "#424242", fill = "#424242") +
+  xlab("TPM") +
+  ggtitle("Density of TPM of shared K36me3 peaks at genes")
+
+
+
+
+#now I want to find areas in K36M where peaks were lost or gained in the mutant compared to the wild type
+#basically find overlaps, but the opposite - unique peaks
+#or find peaks that have lessened or grown in height
+
+
+
+```
+
+```{r}
+#trying to venn diagram the amt of overlaps btw WT and mut
+
+#I don't trust the setdiff function for this
+# K36M_H3K27me3_unique <- setdiff(peak_list[[1]], peak_list[[4]])
+# WT_H3K27me3_unique <- setdiff(peak_list[[4]], peak_list[[1]])
+# 
+# K36M_H3K27me3_unique_df <- as.data.frame(K36M_H3K27me3_unique)
+# WT_H3K27me3_unique_df <- as.data.frame(WT_H3K27me3_unique)
+# 
+# K36M_H3K27me3_unique_mat <- as.matrix(K36M_H3K27me3_unique_df)
+# WT_H3K27me3_unique_mat <- as.matrix(WT_H3K27me3_unique_df)
+
+BiocManager::install("ChIPpeakAnno")
+library(ChIPpeakAnno)
+
+v <- makeVennDiagram(Peaks=list(peak_list[[1]], peak_list[[4]]),
+                       NameOfPeaks=c("K36M_H3K27me3", "WT_H3K27me3"))
+#this gives me diff numbers than when I do the overlaps/unique diff ways lol
+v <- makeVennDiagram(Peaks=list(peak_list[[2]], peak_list[[5]]),
+                       NameOfPeaks=c("K36M_H3K36me3", "WT_H3K36me3"))
+
+```
+

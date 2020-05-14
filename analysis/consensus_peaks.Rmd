@@ -70,7 +70,7 @@ sample_name <- sapply(fl, function(x){
 unique_sample <- unique(sample_name)
   
 consensus_peaks <- list()
-  # This for loop will iterate over all dna binding proteins.
+  # This for loop will iterate over all samples.
 for(i in 1:length(unique_sample)) {
     # load all the peak files corresponding to this dna binding proteins.
     sample <- unique_sample[i]
