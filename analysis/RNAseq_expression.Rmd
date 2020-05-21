@@ -1,0 +1,125 @@
+---
+title: "RNA-seq expression"
+author: "Alison S"
+date: "5/13/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(GenomicRanges)
+library(GenomicFeatures)
+library(rtracklayer)
+library(ggrepel)
+library(Rsubread)
+```
+
+For Wild-type:
+
+```{r}
+# First we will take the bam file and find the number of reads for each genotype
+WT_counts <- featureCounts(c("/scratch/Users/alsw5948/JB_K-M/JB_K-M_rnaseq_analysis/JB_K-M_rnaseq/results/markDuplicates/SRR8598952_1Aligned.sortedByCoord.out.markDups.bam", "/scratch/Users/alsw5948/JB_K-M/JB_K-M_rnaseq_analysis/JB_K-M_rnaseq/results/markDuplicates/SRR8598953_1Aligned.sortedByCoord.out.markDups.bam"),
+                        annot.ext = "/scratch/Users/alsw5948/JB_K-M/JB_K-M_rnaseq_analysis/JB_K-M_rnaseq/util/gencode.vM1.annotation.gtf",
+                        isGTFAnnotationFile = T,
+                        isPairedEnd = T,
+                        nthreads = 16)
+
+# Here we will find the number of reads per kilobases of a given gene body (rpkm).
+WT_rpk <- WT_counts$counts / (WT_counts$annotation$Length/1000)
+WT_expression <- data.frame("rpk" = WT_rpk) %>%
+  rownames_to_column("gene_id") %>%
+  pivot_longer(2:3, names_to = "sample", values_to = "rpk")
+
+# Here we will convert rpkm to transcripts per million of reads (tpm)
+WT_expression_summary <- WT_expression %>%
+  group_by(sample) %>%
+  summarize(total_rpk = sum(WT_rpk, na.rm = T))
+WT_expression_summary$rpk_m <- WT_expression_summary$total_rpk / 1e6
+WT_expression <- merge(WT_expression, WT_expression_summary)
+WT_expression$tpm <- WT_expression$rpk / WT_expression$rpk_m
+WT_tpm <- WT_expression %>% group_by(gene_id) %>%
+  summarize(tpm = mean(tpm, na.rm = T))
+```
+
+For K9M:
+
+```{r}
+K9M_counts <- featureCounts(c("/scratch/Users/alsw5948/JB_K-M/JB_K-M_rnaseq_analysis/JB_K-M_rnaseq/results/markDuplicates/SRR8598954_1Aligned.sortedByCoord.out.markDups.bam", "/scratch/Users/alsw5948/JB_K-M/JB_K-M_rnaseq_analysis/JB_K-M_rnaseq/results/markDuplicates/SRR8598955_1Aligned.sortedByCoord.out.markDups.bam"),
+                        annot.ext = "/scratch/Users/alsw5948/JB_K-M/JB_K-M_rnaseq_analysis/JB_K-M_rnaseq/util/gencode.vM1.annotation.gtf",
+                        isGTFAnnotationFile = T,
+                        isPairedEnd = T,
+                        nthreads = 16)
+ 
+# Here we will find the number of reads per kilobases of a given gene body (rpkm).
+K9M_rpk <- K9M_counts$counts / (K9M_counts$annotation$Length/1000)
+K9M_expression <- data.frame("rpk" = K9M_rpk) %>%
+  rownames_to_column("gene_id") %>%
+  pivot_longer(2:3, names_to = "sample", values_to = "rpk")
+
+# Here we will convert rpkm to transcripts per million of reads (tpm)
+K9M_expression_summary <- K9M_expression %>%
+  group_by(sample) %>%
+  summarize(total_rpk = sum(K9M_rpk, na.rm = T))
+K9M_expression_summary$rpk_m <- K9M_expression_summary$total_rpk / 1e6
+K9M_expression <- merge(K9M_expression, K9M_expression_summary)
+K9M_expression$tpm <- K9M_expression$rpk / K9M_expression$rpk_m
+K9M_tpm <- K9M_expression %>% group_by(gene_id) %>%
+  summarize(tpm = mean(tpm, na.rm = T))
+
+```
+
+For K36M:
+
+```{r}
+K36M_counts <- featureCounts(c("/scratch/Users/alsw5948/JB_K-M/JB_K-M_rnaseq_analysis/JB_K-M_rnaseq/results/markDuplicates/SRR8598956_1Aligned.sortedByCoord.out.markDups.bam", "/scratch/Users/alsw5948/JB_K-M/JB_K-M_rnaseq_analysis/JB_K-M_rnaseq/results/markDuplicates/SRR8598957_1Aligned.sortedByCoord.out.markDups.bam"),
+                        annot.ext = "/scratch/Users/alsw5948/JB_K-M/JB_K-M_rnaseq_analysis/JB_K-M_rnaseq/util/gencode.vM1.annotation.gtf",
+                        isGTFAnnotationFile = T,
+                        isPairedEnd = T,
+                        nthreads = 16)
+
+# Here we will find the number of reads per kilobases of a given gene body (rpkm).
+K36M_rpk <- K36M_counts$counts / (K36M_counts$annotation$Length/1000)
+K36M_expression <- data.frame("rpk" = K36M_rpk) %>%
+  rownames_to_column("gene_id") %>%
+  pivot_longer(2:3, names_to = "sample", values_to = "rpk")
+
+# Here we will convert rpkm to transcripts per million of reads (tpm)
+K36M_expression_summary <- K36M_expression %>%
+  group_by(sample) %>%
+  summarize(total_rpk = sum(K36M_rpk, na.rm = T))
+K36M_expression_summary$rpk_m <- K36M_expression_summary$total_rpk / 1e6
+K36M_expression <- merge(K36M_expression, K36M_expression_summary)
+K36M_expression$tpm <- K36M_expression$rpk / K36M_expression$rpk_m
+K36M_tpm <- K36M_expression %>% group_by(gene_id) %>%
+  summarize(tpm = mean(tpm, na.rm = T))
+```
+
+```{r}
+#make a data frame with tpm for WT, K9M, and K36M
+colnames(WT_tpm) <- c("gene_id", "WT_tpm")
+colnames(K9M_tpm) <- c("gene_id", "K9M_tpm")
+colnames(K36M_tpm) <- c("gene_id", "K36M_tpm")
+
+WT_vs_K9M_tpm <- merge(WT_tpm, K9M_tpm)
+WT_vs_K36M_tpm <- merge(WT_tpm, K36M_tpm)
+all_tpm <- merge(two_tpm, K36M_tpm)
+
+```
+
+```{r}
+gtf <- rtracklayer::import("/scratch/Users/alsw5948/JB_K-M/JB_K-M_rnaseq_analysis/JB_K-M_rnaseq/util/gencode.vM1.annotation.gtf")
+
+#Pull gene IDs and transcript types out of gencode gtf
+gene_id <- gtf$gene_id
+transcript_type <- gtf$transcript_type
+
+#Make a data frame with gene IDs and transcript types.
+gene_type_df <- data.frame('gene_id' = gene_id, 'transcript_type' = transcript_type) 
+
+all_tpm_gene_type <- merge(all_tpm, gene_type_df)
+
+```
+
