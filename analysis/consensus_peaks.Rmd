@@ -13,16 +13,15 @@ options(stringsAsFactors = FALSE)
 library(GenomicRanges)
 library(rtracklayer)
 library(tidyverse)
-#source("../util/_setup.R")
-#source("../util/intersect_functions.R")
+
 ```
 
 
 # Purpose: Create consensus peak sets
 
-To be conservative in our peak calls and be sure that we're dealing with replicatable peaks in the following analyses, here will will create a consensus peak .bed file for each DNA binding protein by taking only those peaks which overlap in all replicate experiments. 
+To be conservative in our peak calls and be sure that we're dealing with replicatable peaks in the following analyses, here will will create a consensus peak .bed file for each histone mark by taking only those peaks which overlap in all replicate experiments. 
 
-The resulting peaks will consist of peaks which overlapped by at least one base pair in each replicate and will use the `GenomicRanges::reduce` function to merge the peaks by taking the outer boundaries of overlapping peaks. This strategy may widen some peaks, but will ensure that each peak in the resulting peak set has evidence in all experiments performed for that DNA binding protein. 
+The resulting peaks will consist of peaks which overlapped by at least one base pair in each replicate and will use the `GenomicRanges::reduce` function to merge the peaks by taking the outer boundaries of overlapping peaks. This strategy may widen some peaks, but will ensure that each peak in the resulting peak set has evidence in all experiments performed for that histone mark. 
 
 
 ```{r}
@@ -63,7 +62,6 @@ sample_name <- sapply(fl, function(x){
     y <-  unlist(strsplit(x, "/"))[[12]]
     z <- unlist(strsplit(y, "_"))[[1]]
     w <- unlist(strsplit(y, "_"))[[2]]
-    #q <- unlist(strsplit(y, "_"))[[3]]
     paste0(z, "_", w)
   })
   
@@ -72,7 +70,7 @@ unique_sample <- unique(sample_name)
 consensus_peaks <- list()
   # This for loop will iterate over all samples.
 for(i in 1:length(unique_sample)) {
-    # load all the peak files corresponding to this dna binding proteins.
+    # load all the peak files corresponding to this histone mark.
     sample <- unique_sample[i]
     sample_index <- grep(sample, sample_name)
     sample_files <- fl[sample_index]

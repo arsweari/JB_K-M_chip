@@ -136,7 +136,7 @@ g + geom_density(alpha = 0.2, color = "#424242", fill = "#424242") +
 # 
 # K36M_H3K27me3_unique_mat <- as.matrix(K36M_H3K27me3_unique_df)
 # WT_H3K27me3_unique_mat <- as.matrix(WT_H3K27me3_unique_df)
-
+ 
 BiocManager::install("ChIPpeakAnno")
 library(ChIPpeakAnno)
 
